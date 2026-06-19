@@ -1,0 +1,9 @@
+{
+  "short_name": "Zario",
+  "name": "Zario - Finanzas Personales",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#06B6D4",
+  "background_color": "#FFFFFF",
+  "orientation": "portrait"
+}
