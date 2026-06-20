@@ -886,7 +886,20 @@ export default function ZarioApp({ supabase, initialSession }) {
                   }
                   setLoading(false); setScreen("app");
                 }}>{loading ? "Cargando..." : "Iniciar Sesión"}</button>
-                <div style={{ textAlign: "center", marginTop: 16, fontSize: 14, color: "#64748B" }}>¿No tienes cuenta? <span onClick={() => setScreen("register")} style={{ color: "#06B6D4", cursor: "pointer", fontWeight: 600 }}>Crear cuenta</span></div>
+                <div style={{ textAlign: "center", marginTop: 12, marginBottom: 4 }}>
+                  <span onClick={async () => {
+                    const email = lEmailR.current?.value || "";
+                    if (!email) { alert("Por favor ingresa tu correo primero"); return; }
+                    if (supabase) {
+                      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                        redirectTo: window.location.origin,
+                      });
+                      if (error) { alert("Error: " + error.message); return; }
+                      alert("✅ Te enviamos un enlace a " + email + " para restablecer tu contraseña. Revisa tu correo.");
+                    }
+                  }} style={{ color: "#06B6D4", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>¿Olvidaste tu contraseña?</span>
+                </div>
+                <div style={{ textAlign: "center", marginTop: 8, fontSize: 14, color: "#64748B" }}>¿No tienes cuenta? <span onClick={() => setScreen("register")} style={{ color: "#06B6D4", cursor: "pointer", fontWeight: 600 }}>Crear cuenta</span></div>
               </>
             ) : (
               <>
