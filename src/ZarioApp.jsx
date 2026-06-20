@@ -942,19 +942,7 @@ export default function ZarioApp({ supabase, initialSession }) {
                   }
                   setLoading(false); setScreen("app");
                 }}>{loading ? "Cargando..." : "Iniciar Sesión"}</button>
-                <div style={{ textAlign: "center", marginTop: 12, marginBottom: 4 }}>
-                  <span onClick={async () => {
-                    const email = lEmailR.current?.value || "";
-                    if (!email) { alert("Por favor ingresa tu correo primero"); return; }
-                    if (supabase) {
-                      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-                        redirectTo: window.location.origin,
-                      });
-                      if (error) { alert("Error: " + error.message); return; }
-                      alert("✅ Te enviamos un enlace a " + email + " para restablecer tu contraseña. Revisa tu correo.");
-                    }
-                  }} style={{ color: "#06B6D4", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>¿Olvidaste tu contraseña?</span>
-                </div>
+
                 <div style={{ textAlign: "center", marginTop: 8, fontSize: 14, color: "#64748B" }}>¿No tienes cuenta? <span onClick={() => setScreen("register")} style={{ color: "#06B6D4", cursor: "pointer", fontWeight: 600 }}>Crear cuenta</span></div>
               </>
             ) : (
@@ -1431,14 +1419,7 @@ export default function ZarioApp({ supabase, initialSession }) {
       <Card>
         <CT>Exportar Reporte</CT>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <Btn onClick={() => {
-            const lines = ["REPORTE FINANCIERO ZARIO", `Fecha: ${fechaHoy()}`, `Usuario: ${user.name}`, "", "=== RESUMEN ===", `Ingreso: ${fmt(monthlyInc || totalInc)}`, `Gastos: ${fmt(monthExp)}`, `Balance: ${fmt(balance)}`, `Patrimonio Neto: ${fmt(netWorth)}`, "", "=== GASTOS ===", ...expenses.map(e => `${e.date} | ${e.category} | ${e.desc} | -${fmt(e.amount)}`), "", "=== FACTURAS ===", ...bills.map(b => `${billName(b.name)} | ${fmt(b.amount)} | ${b.paid ? "PAGADA" : "PENDIENTE"}`)];
-            const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/plain" })); a.download = `Zario_${todayISO()}.txt`; a.click();
-          }}>📄 TXT</Btn>
-          <Btn onClick={() => {
-            const rows = [["Fecha", "Tipo", "Descripción", "Categoría", "Monto"], ...expenses.map(e => [e.date, "Gasto", e.desc, e.category, `-${e.amount}`]), ...incomes.map(i => [i.date, "Ingreso", i.desc, srcName(i.source), `+${i.amount}`])];
-            const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv" })); a.download = `Zario_${todayISO()}.csv`; a.click();
-          }}>📊 CSV</Btn>
+
           <Btn v="outline" onClick={() => {
             const w = window.open("", "_blank");
             w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte Zario</title><style>body{font-family:Arial,sans-serif;max-width:680px;margin:40px auto;color:#0F172A;}h1{color:#06B6D4;}h2{font-size:15px;border-bottom:2px solid #06B6D4;padding-bottom:6px;margin:18px 0 10px;}table{width:100%;border-collapse:collapse;font-size:13px;}th{background:#06B6D4;color:white;padding:7px;text-align:left;}td{padding:7px;border-bottom:1px solid #eee;}.pos{color:#10B981;font-weight:700;}.neg{color:#F43F5E;font-weight:700;}@media print{button{display:none}}</style></head><body><h1>Zario — Reporte</h1><p>${fechaHoy()} · ${user.name}</p><h2>Resumen</h2><table><tr><th>Concepto</th><th>Monto</th></tr><tr><td>Ingresos</td><td class="pos">${fmt(monthlyInc || totalInc)}</td></tr><tr><td>Gastos</td><td class="neg">${fmt(monthExp)}</td></tr><tr><td>Balance</td><td class="${(monthlyInc||totalInc) - monthExp >= 0 ? "pos" : "neg"}">${fmt((monthlyInc||totalInc) - monthExp)}</td></tr><tr><td>Patrimonio</td><td class="pos">${fmt(netWorth)}</td></tr></table>${expenses.length ? `<h2>Gastos</h2><table><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th></tr>${expenses.map(e => `<tr><td>${e.date}</td><td>${e.desc}</td><td>${e.category}</td><td class="neg">-${fmt(e.amount)}</td></tr>`).join("")}</table>` : ""}<p style="text-align:center;color:#94A3B8;font-size:11px;margin-top:30px;">Zario · ${todayISO()}</p></body></html>`);
