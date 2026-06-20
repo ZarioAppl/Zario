@@ -315,7 +315,7 @@ const IncomeRef = ({ value, onSave, placeholder }) => {
       <input
         ref={ref}
         className="inp"
-        style={{ flex: 1 }}
+        style={{ flex: 1, color: "#0F172A", background: "rgba(0,0,0,0.04)" }}
         type="number"
         inputMode="decimal"
         placeholder={placeholder || "RD$0.00"}
@@ -333,7 +333,7 @@ const GoalRef = ({ dg, wg, mg, onDG, onWG, onMG }) => {
   useEffect(() => { if (dgR.current && dgR.current !== document.activeElement) dgR.current.value = dg || ""; }, [dg]);
   useEffect(() => { if (wgR.current && wgR.current !== document.activeElement) wgR.current.value = wg || ""; }, [wg]);
   useEffect(() => { if (mgR.current && mgR.current !== document.activeElement) mgR.current.value = mg || ""; }, [mg]);
-  const s = { width: "100%", background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 12px", color: "#F8FAFC", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" };
+  const s = { width: "100%", background: "rgba(0,0,0,0.04)", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "10px 12px", color: "#0F172A", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" };
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, width: "100%", maxWidth: "100%" }}>
       <div>
@@ -363,7 +363,7 @@ const DailyRow = ({ onAdd }) => {
     if (amtR.current) amtR.current.value = "";
     descR.current?.focus();
   };
-  const s = { background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "11px 14px", color: "#F8FAFC", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none" };
+  const s = { background: "rgba(0,0,0,0.04)", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "11px 14px", color: "#0F172A", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none" };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
       <input ref={descR} style={{ ...s, width: "100%", boxSizing: "border-box" }} type="text" placeholder="Descripción (ej. Servicio cliente)" autoComplete="off" />
@@ -427,22 +427,14 @@ function ProfilePage({ user, dark, C, onSave, onAvatar, onDark }) {
   return (
     <div>
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>Foto de Perfil</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>Tu Perfil</div>
         <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 20 }}>
-          <label style={{ cursor: "pointer" }}>
-            <div className="avatar-lg">
-              {user.avatar ? <img src={user.avatar} alt="av" /> : (user.name ? user.name[0].toUpperCase() : "U")}
-              <div className="av-ov"><IC n="cam" s={18} c="white" /></div>
-            </div>
-            <input type="file" accept="image/*" style={{ display: "none" }} onChange={onAvatar} />
-          </label>
+          <div style={{ width: 72, height: 72, borderRadius: "50%", background: "linear-gradient(135deg,#06B6D4,#8B5CF6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, color: "white", flexShrink: 0 }}>
+            {user.name ? user.name[0].toUpperCase() : "U"}
+          </div>
           <div>
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 4 }}>{user.name}</div>
-            <div style={{ fontSize: 13, color: C.muted, marginBottom: 10 }}>{user.email}</div>
-            <label style={{ cursor: "pointer" }}>
-              <Btn sm v="outline">Cambiar Foto</Btn>
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={onAvatar} />
-            </label>
+            <div style={{ fontSize: 13, color: C.muted }}>{user.email}</div>
           </div>
         </div>
         <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 14, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>Información</div>
@@ -1448,9 +1440,11 @@ export default function ZarioApp({ supabase, initialSession }) {
             <button style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 4 }} onClick={() => setSb(true)}>
               <IC n="menu" s={22} c={C.text} />
             </button>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: C.text }}>{pageTitles[nav]}</div>
-            <div className="avatar-sm" style={{ cursor: "pointer" }} onClick={() => setNav("profile")}>
-              {user.avatar ? <img src={user.avatar} alt="av" /> : (user.name ? user.name[0].toUpperCase() : "U")}
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700, color: C.text }}>
+              {nav !== "dashboard" ? pageTitles[nav] : ""}
+            </div>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,#06B6D4,#8B5CF6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "white", cursor: "pointer", flexShrink: 0 }} onClick={() => setNav("profile")}>
+              {user.name ? user.name[0].toUpperCase() : "U"}
             </div>
           </div>
 
@@ -1458,6 +1452,11 @@ export default function ZarioApp({ supabase, initialSession }) {
           <div className="page-body">
             {/* Desktop header */}
             <div style={{ marginBottom: 22 }}>
+              {nav !== "dashboard" && (
+                <button onClick={() => setNav("dashboard")} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "#06B6D4", fontSize: 14, fontWeight: 600, fontFamily: "'Inter',sans-serif", marginBottom: 12, padding: 0 }}>
+                  <IC n="trend" s={16} c="#06B6D4" />← Inicio
+                </button>
+              )}
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 800, color: C.text, lineHeight: 1.2 }}>
                 Hola, {user.name || "Usuario"}
               </div>
