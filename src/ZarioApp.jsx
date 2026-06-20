@@ -567,7 +567,7 @@ export default function ZarioApp({ supabase, initialSession }) {
 
       if (p.data) {
         const pr = p.data;
-        setUser(u => ({ ...u, name: pr.full_name || u.name, email: pr.email || u.email }));
+        setUser(u => ({ ...u, name: pr.full_name || u.name, email: pr.email || u.email, avatar: pr.avatar_url || u.avatar }));
         if (pr.dark_mode !== undefined && pr.dark_mode !== null) setDark(pr.dark_mode);
         if (pr.monthly_inc) setMI(pr.monthly_inc);
         if (pr.weekly_inc) setWI(pr.weekly_inc);
@@ -735,12 +735,24 @@ export default function ZarioApp({ supabase, initialSession }) {
     const f = e.target.files[0]; if (!f) return;
     const r = new FileReader();
     r.onload = ev => {
-      const avatar = ev.target.result;
-      setUser(u => ({ ...u, avatar }));
-      // Save to profile
-      getUID().then(uid => {
-        if (uid && supabase) supabase.from("profiles").upsert({ id: uid, avatar_url: avatar });
-      });
+      // Compress image before saving
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX = 200; // max 200x200px
+        let w = img.width; let h = img.height;
+        if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+        else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        const compressed = canvas.toDataURL("image/jpeg", 0.7);
+        setUser(u => ({ ...u, avatar: compressed }));
+        getUID().then(uid => {
+          if (uid && supabase) supabase.from("profiles").upsert({ id: uid, avatar_url: compressed });
+        });
+      };
+      img.src = ev.target.result;
     };
     r.readAsDataURL(f);
   };
