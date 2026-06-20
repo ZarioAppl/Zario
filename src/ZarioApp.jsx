@@ -105,10 +105,10 @@ select{-webkit-appearance:none;}
 
 .layout{display:flex;min-height:100vh;}
 .sidebar{width:250px;position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:18px 12px;overflow-y:auto;z-index:100;transition:transform 0.3s;background:${dark ? "#1E293B" : "#FFFFFF"};border-right:1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)"};}
-.main-content{margin-left:250px;flex:1;min-height:100vh;background:${dark ? "#0F172A" : "#F1F5F9"};}
+.main-content{margin-left:250px;flex:1;min-height:100vh;background:${dark ? "#0F172A" : "#F1F5F9"};overflow-x:hidden;max-width:calc(100vw - 250px);}
 
 .mob-hdr{display:none;align-items:center;justify-content:space-between;padding:12px 16px;position:sticky;top:0;z-index:50;background:${dark ? "#1E293B" : "#FFFFFF"};border-bottom:1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)"};}
-.page-body{padding:20px 24px;}
+.page-body{padding:20px 24px;overflow-x:hidden;max-width:100%;box-sizing:border-box;}
 
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;}
 .overlay.show{display:block;}
@@ -117,8 +117,8 @@ select{-webkit-appearance:none;}
 .nav-item:hover{background:${dark ? "rgba(255,255,255,0.05)" : "#F1F5F9"};}
 .nav-item.active{background:${dark ? "rgba(6,182,212,0.15)" : "rgba(6,182,212,0.1)"};color:#06B6D4;font-weight:600;}
 
-.card{background:${dark ? "#1E293B" : "#FFFFFF"};border:1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"};border-radius:16px;padding:18px;}
-.stat-card{border-radius:16px;padding:18px;position:relative;overflow:hidden;background:${dark ? "#1E293B" : "#FFFFFF"};border:1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"};cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;}
+.card{background:${dark ? "#1E293B" : "#FFFFFF"};border:1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"};border-radius:16px;padding:18px;overflow:hidden;box-sizing:border-box;}
+.stat-card{border-radius:16px;padding:16px;position:relative;overflow:hidden;box-sizing:border-box;background:${dark ? "#1E293B" : "#FFFFFF"};border:1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"};cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;}
 .stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.1);}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
@@ -175,7 +175,7 @@ select{-webkit-appearance:none;}
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%);}
   .sidebar.open{transform:translateX(0);}
-  .main-content{margin-left:0;}
+  .main-content{margin-left:0;max-width:100vw;}
   .mob-hdr{display:flex;}
   .page-body{padding:14px 14px;}
   .stats-grid{grid-template-columns:1fr 1fr;gap:10px;}
@@ -333,9 +333,9 @@ const GoalRef = ({ dg, wg, mg, onDG, onWG, onMG }) => {
   useEffect(() => { if (dgR.current && dgR.current !== document.activeElement) dgR.current.value = dg || ""; }, [dg]);
   useEffect(() => { if (wgR.current && wgR.current !== document.activeElement) wgR.current.value = wg || ""; }, [wg]);
   useEffect(() => { if (mgR.current && mgR.current !== document.activeElement) mgR.current.value = mg || ""; }, [mg]);
-  const s = { flex: 1, background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 12px", color: "#F8FAFC", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none" };
+  const s = { width: "100%", background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 12px", color: "#F8FAFC", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" };
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, width: "100%", maxWidth: "100%" }}>
       <div>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 5 }}>Diaria</div>
         <input ref={dgR} style={s} type="number" inputMode="decimal" placeholder="RD$0" defaultValue={dg || ""} onBlur={() => { if (dgR.current) onDG(Number(dgR.current.value) || 0); }} autoComplete="off" />
@@ -365,10 +365,12 @@ const DailyRow = ({ onAdd }) => {
   };
   const s = { background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "11px 14px", color: "#F8FAFC", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none" };
   return (
-    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-      <input ref={descR} style={{ ...s, flex: 2, minWidth: 130 }} type="text" placeholder="Descripción" autoComplete="off" />
-      <input ref={amtR} style={{ ...s, flex: 1, minWidth: 100 }} type="number" inputMode="decimal" placeholder="RD$0.00" onKeyDown={e => e.key === "Enter" && handle()} autoComplete="off" />
-      <Btn v="green" onClick={handle}>+ Agregar</Btn>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+      <input ref={descR} style={{ ...s, width: "100%", boxSizing: "border-box" }} type="text" placeholder="Descripción (ej. Servicio cliente)" autoComplete="off" />
+      <div style={{ display: "flex", gap: 10 }}>
+        <input ref={amtR} style={{ ...s, flex: 1, boxSizing: "border-box" }} type="number" inputMode="decimal" placeholder="RD$0.00" onKeyDown={e => e.key === "Enter" && handle()} autoComplete="off" />
+        <Btn v="green" onClick={handle} st={{ flexShrink: 0 }}>+ Agregar</Btn>
+      </div>
     </div>
   );
 };
@@ -555,7 +557,7 @@ export default function ZarioApp({ supabase, initialSession }) {
         supabase.from("profiles").select("*").eq("id", uid).single(),
         supabase.from("expenses").select("*").eq("user_id", uid).order("expense_date", { ascending: false }),
         supabase.from("incomes").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
-        supabase.from("daily_entries").select("*").eq("user_id", uid).eq("entry_date", todayISO()).order("created_at", { ascending: false }),
+        supabase.from("daily_entries").select("*").eq("user_id", uid).eq("entry_date", todayISO()).order("entry_time", { ascending: false }),
         supabase.from("goals").select("*").eq("user_id", uid).order("created_at", { ascending: true }),
         supabase.from("bills").select("*").eq("user_id", uid).order("created_at", { ascending: true }),
         supabase.from("budget").select("*").eq("user_id", uid),
@@ -1367,7 +1369,8 @@ export default function ZarioApp({ supabase, initialSession }) {
           <Btn v="outline" onClick={() => {
             const w = window.open("", "_blank");
             w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte Zario</title><style>body{font-family:Arial,sans-serif;max-width:680px;margin:40px auto;color:#0F172A;}h1{color:#06B6D4;}h2{font-size:15px;border-bottom:2px solid #06B6D4;padding-bottom:6px;margin:18px 0 10px;}table{width:100%;border-collapse:collapse;font-size:13px;}th{background:#06B6D4;color:white;padding:7px;text-align:left;}td{padding:7px;border-bottom:1px solid #eee;}.pos{color:#10B981;font-weight:700;}.neg{color:#F43F5E;font-weight:700;}@media print{button{display:none}}</style></head><body><h1>Zario — Reporte</h1><p>${fechaHoy()} · ${user.name}</p><h2>Resumen</h2><table><tr><th>Concepto</th><th>Monto</th></tr><tr><td>Ingresos</td><td class="pos">${fmt(monthlyInc || totalInc)}</td></tr><tr><td>Gastos</td><td class="neg">${fmt(monthExp)}</td></tr><tr><td>Balance</td><td class="${balance >= 0 ? "pos" : "neg"}">${fmt(balance)}</td></tr><tr><td>Patrimonio</td><td class="pos">${fmt(netWorth)}</td></tr></table>${expenses.length ? `<h2>Gastos</h2><table><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th></tr>${expenses.map(e => `<tr><td>${e.date}</td><td>${e.desc}</td><td>${e.category}</td><td class="neg">-${fmt(e.amount)}</td></tr>`).join("")}</table>` : ""}<p style="text-align:center;color:#94A3B8;font-size:11px;margin-top:30px;">Zario · ${todayISO()}</p></body></html>`);
-            w.document.close(); setTimeout(() => w.print(), 500);
+            w.document.write('<div style="text-align:center;margin:20px 0;"><button onclick="window.close()" style="background:#06B6D4;color:white;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;margin-right:10px;">← Volver a Zario</button><button onclick="window.print()" style="background:#0F172A;color:white;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;">🖨️ Imprimir</button></div>');
+            w.document.close();
           }}>🖨️ PDF</Btn>
         </div>
       </Card>
