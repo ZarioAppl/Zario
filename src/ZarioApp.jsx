@@ -1299,11 +1299,11 @@ export default function ZarioApp({ supabase, initialSession }) {
     <div className="analytics-wrap">
       <Card st={{ marginBottom: 16 }}>
         <CT>Este Mes vs Mes Anterior</CT>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-          {[{ label: "Ingresos", curr: monthlyInc || totalInc, color: "#10B981" }, { label: "Gastos", curr: monthExp, color: "#F43F5E" }, { label: "Balance", curr: Math.max(0, balance), color: "#06B6D4" }].map(m => (
-            <div key={m.label} style={{ padding: 13, background: dark ? "rgba(255,255,255,0.03)" : "#F8FAFC", borderRadius: 12, border: `1px solid ${C.border}`, textAlign: "center" }}>
-              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 7 }}>{m.label}</div>
-              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 800, color: m.color }}>{fmt(m.curr)}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, width: "100%", overflow: "hidden" }}>
+          {[{ label: "Ingresos", curr: monthlyInc || totalInc, color: "#10B981" }, { label: "Gastos", curr: monthExp, color: "#F43F5E" }, { label: "Balance", curr: (monthlyInc||totalInc) - monthExp, color: "#06B6D4" }].map(m => (
+            <div key={m.label} style={{ padding: "11px 8px", background: dark ? "rgba(255,255,255,0.03)" : "#F8FAFC", borderRadius: 12, border: `1px solid ${C.border}`, textAlign: "center", overflow: "hidden", minWidth: 0 }}>
+              <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 6 }}>{m.label}</div>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 800, color: m.color, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fmt(m.curr)}</div>
             </div>
           ))}
         </div>
@@ -1453,8 +1453,8 @@ export default function ZarioApp({ supabase, initialSession }) {
             {/* Desktop header */}
             <div style={{ marginBottom: 22 }}>
               {nav !== "dashboard" && (
-                <button onClick={() => setNav("dashboard")} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "#06B6D4", fontSize: 14, fontWeight: 600, fontFamily: "'Inter',sans-serif", marginBottom: 12, padding: 0 }}>
-                  <IC n="trend" s={16} c="#06B6D4" />← Inicio
+                <button onClick={() => setNav("dashboard")} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(6,182,212,0.1)", border: "1.5px solid rgba(6,182,212,0.3)", borderRadius: 99, cursor: "pointer", color: "#06B6D4", fontSize: 15, fontWeight: 700, fontFamily: "'Inter',sans-serif", marginBottom: 14, padding: "8px 18px" }}>
+                  ← Inicio
                 </button>
               )}
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 800, color: C.text, lineHeight: 1.2 }}>
