@@ -492,6 +492,7 @@ function ProfilePage({ user, dark, C, onSave, onAvatar, onDark }) {
 export default function ZarioApp({ supabase, initialSession }) {
   const [dark, setDark] = useState(false);
   const [screen, setScreen] = useState(initialSession ? "app" : "login");
+  const [resetMode, setResetMode] = useState(false);
   const [nav, setNav] = useState("dashboard");
   const [sbOpen, setSb] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -580,6 +581,18 @@ export default function ZarioApp({ supabase, initialSession }) {
   }, [supabase, getUID]);
 
   useEffect(() => { if (screen === "app") loadAll(); }, [screen]);
+
+  // Detect password recovery session from email link
+  useEffect(() => {
+    if (!supabase) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setResetMode(true);
+        setScreen("reset");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   // ── CÁLCULOS ──
   const totalInc = incomes.reduce((s, x) => s + Number(x.amount), 0);
@@ -850,6 +863,49 @@ export default function ZarioApp({ supabase, initialSession }) {
   };
 
   // ── AUTH ──
+  // ── RESET PASSWORD SCREEN ──
+  if (screen === "reset") {
+    const newPassRef = useRef(null);
+    const confirmPassRef = useRef(null);
+    const inpStyle = { width: "100%", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "12px 14px", color: "#0F172A", outline: "none", fontSize: "16px", fontFamily: "'Inter',sans-serif", marginBottom: 14 };
+    return (
+      <>
+        <style>{getCSS(false)}</style>
+        <div className="auth-bg">
+          <div className="auth-card">
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <div style={{ width: 58, height: 58, background: "linear-gradient(135deg,#06B6D4,#0284C7)", borderRadius: 17, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", boxShadow: "0 8px 24px rgba(6,182,212,0.3)" }}>
+                <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 30, fontWeight: 800, color: "white" }}>Z</span>
+              </div>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>Nueva Contraseña</div>
+              <div style={{ color: "#64748B", fontSize: 14 }}>Escribe tu nueva contraseña</div>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 6 }}>Nueva Contraseña</div>
+            <input ref={newPassRef} style={inpStyle} type="password" placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 6 }}>Confirmar Contraseña</div>
+            <input ref={confirmPassRef} style={inpStyle} type="password" placeholder="Repite la contraseña" autoComplete="new-password" />
+            <button className="btn-main" disabled={loading} onClick={async () => {
+              const newPass = newPassRef.current?.value || "";
+              const confirmPass = confirmPassRef.current?.value || "";
+              if (!newPass || !confirmPass) { alert("Por favor completa los dos campos"); return; }
+              if (newPass.length < 6) { alert("La contraseña debe tener al menos 6 caracteres"); return; }
+              if (newPass !== confirmPass) { alert("Las contraseñas no coinciden"); return; }
+              setLoading(true);
+              if (supabase) {
+                const { error } = await supabase.auth.updateUser({ password: newPass });
+                if (error) { alert("Error: " + error.message); setLoading(false); return; }
+                alert("✅ ¡Contraseña actualizada! Ya puedes iniciar sesión.");
+                setResetMode(false);
+                setScreen("login");
+              }
+              setLoading(false);
+            }}>{loading ? "Guardando..." : "Guardar Nueva Contraseña"}</button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   if (screen === "login" || screen === "register") {
     const inpStyle = { width: "100%", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "12px 14px", color: "#0F172A", outline: "none", fontSize: "16px", fontFamily: "'Inter',sans-serif", marginBottom: 14 };
     return (
