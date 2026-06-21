@@ -52,6 +52,22 @@ const isOverdue = (d) => {
   return date < now;
 };
 
+// Get next month's payment date
+const nextPayDate = (d) => {
+  if (!d) return null;
+  const date = new Date(d + "T12:00:00");
+  date.setMonth(date.getMonth() + 1);
+  return date.toISOString().split("T")[0];
+};
+
+// Check if bill should auto-reset (paid last month, new month started)
+const shouldReset = (b) => {
+  if (!b.paid || !b.dueDate) return false;
+  const due = new Date(b.dueDate + "T12:00:00");
+  const now = new Date();
+  return now.getMonth() > due.getMonth() || now.getFullYear() > due.getFullYear();
+};
+
 const BILL_ES = { "Rent/Mortgage": "Renta/Hipoteca", "Electricity": "Electricidad", "Water": "Agua", "Gas": "Gas", "Internet": "Internet", "Phone": "Teléfono", "Car Payment": "Pago de Auto", "Car Insurance": "Seguro de Auto", "Health Insurance": "Seguro Médico", "Bank Loan": "Préstamo Bancario" };
 const billName = (n) => BILL_ES[n] || n;
 const SRC_ES = { "Salary": "Salario", "Freelance": "Freelance", "Business": "Negocio", "Investments": "Inversiones", "Rental Income": "Alquiler", "Side Hustle": "Trabajo Extra", "Other": "Otro" };
@@ -363,7 +379,7 @@ const DailyRow = ({ onAdd }) => {
     if (amtR.current) amtR.current.value = "";
     descR.current?.focus();
   };
-  const s = { background: "rgba(0,0,0,0.04)", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "11px 14px", color: "#0F172A", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none" };
+  const s = { background: "rgba(255,255,255,0.08)", border: "1.5px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "11px 14px", color: "#F8FAFC", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none" };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
       <input ref={descR} style={{ ...s, width: "100%", boxSizing: "border-box" }} type="text" placeholder="Descripción (ej. Servicio cliente)" autoComplete="off" />
@@ -573,7 +589,20 @@ export default function ZarioApp({ supabase, initialSession }) {
       if (incs.data?.length) setInc(incs.data.map(i => ({ id: i.id, source: i.source, desc: i.description || "", amount: i.amount, date: i.income_date })));
       if (dly.data?.length) setDE(dly.data.map(e => ({ id: e.id, desc: e.description || "", amount: e.amount, time: e.entry_time || "" })));
       if (gls.data?.length) setGoals(gls.data.map(g => ({ id: g.id, name: g.goal_name, target: g.target, saved: g.saved, deadline: g.deadline, color: g.color || "#06B6D4", done: g.done })));
-      if (bls.data?.length) setBills(bls.data.map(b => ({ id: b.id, name: b.bill_name, amount: b.amount, dueDate: b.due_date, paid: b.paid, freq: b.freq || "Mensual" })));
+      if (bls.data?.length) {
+        const loadedBills = bls.data.map(b => ({ id: b.id, name: b.bill_name, amount: b.amount, dueDate: b.due_date, paid: b.paid, freq: b.freq || "Mensual" }));
+        // Auto-reset bills paid in previous months
+        const resetBills = loadedBills.map(b => {
+          if (shouldReset(b)) {
+            const newDate = nextPayDate(b.dueDate);
+            // Update in Supabase too
+            if (uid && supabase) supabase.from("bills").update({ paid: false, due_date: newDate }).eq("id", b.id);
+            return { ...b, paid: false, dueDate: newDate };
+          }
+          return b;
+        });
+        setBills(resetBills);
+      }
       if (bgt.data?.length) setBudget(prev => prev.map(b => { const f = bgt.data.find(x => x.cat === b.cat); return f ? { ...b, id: f.id, budgeted: f.budgeted, spent: f.spent } : b; }));
       if (ast.data?.length) setAssets(ast.data.map(a => ({ id: a.id, name: a.asset_name, amount: a.amount })));
       if (lib.data?.length) setLiabs(lib.data.map(a => ({ id: a.id, name: a.liability_name, amount: a.amount })));
@@ -1319,13 +1348,31 @@ export default function ZarioApp({ supabase, initialSession }) {
 
   const Bills = () => (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 8 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 99, background: "rgba(245,158,11,0.1)", color: "#D97706" }}>⏳ {bills.filter(b => !b.paid).length} pendientes</span>
-          <span style={{ fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 99, background: "rgba(16,185,129,0.1)", color: "#10B981" }}>✅ {bills.filter(b => b.paid).length} pagadas</span>
-        </div>
-        <Btn onClick={() => openModal("addBill")}>+ Agregar</Btn>
-      </div>
+      {/* Bills summary */}
+      {(() => {
+        const totalPending = bills.filter(b => !b.paid).reduce((s,b) => s + Number(b.amount), 0);
+        const totalPaid = bills.filter(b => b.paid).reduce((s,b) => s + Number(b.amount), 0);
+        return (
+          <div style={{ background: dark ? "rgba(255,255,255,0.03)" : "#F8FAFC", border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Resumen del Mes</div>
+              <Btn sm onClick={() => openModal("addBill")}>+ Agregar</Btn>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ padding: "10px 12px", background: "rgba(245,158,11,0.08)", borderRadius: 10, border: "1px solid rgba(245,158,11,0.2)" }}>
+                <div style={{ fontSize: 11, color: "#D97706", fontWeight: 600, marginBottom: 4 }}>⏳ PENDIENTE</div>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 800, color: "#D97706" }}>{fmt(totalPending)}</div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{bills.filter(b => !b.paid).length} facturas</div>
+              </div>
+              <div style={{ padding: "10px 12px", background: "rgba(16,185,129,0.08)", borderRadius: 10, border: "1px solid rgba(16,185,129,0.2)" }}>
+                <div style={{ fontSize: 11, color: "#10B981", fontWeight: 600, marginBottom: 4 }}>✅ PAGADO</div>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 800, color: "#10B981" }}>{fmt(totalPaid)}</div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{bills.filter(b => b.paid).length} facturas</div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {bills.map(b => {
         const over = isOverdue(b.dueDate) && !b.paid;
         const soon = isDueSoon(b.dueDate) && !isOverdue(b.dueDate) && !b.paid;
@@ -1336,8 +1383,10 @@ export default function ZarioApp({ supabase, initialSession }) {
             </div>
             <div style={{ flex: 1, marginLeft: 10, overflow: "hidden" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: b.paid ? C.muted : C.text }}>{billName(b.name)}</div>
-              <div style={{ fontSize: 11, marginTop: 2, color: over ? "#F43F5E" : soon ? "#D97706" : C.muted }}>
-                {b.dueDate ? `📅 ${b.dueDate}${over ? " 🚨 Vencida" : soon ? " ⚠️ Próxima" : ""}` : "Sin fecha"} · {b.freq}
+              <div style={{ fontSize: 11, marginTop: 2, color: over ? "#F43F5E" : soon ? "#D97706" : b.paid ? "#10B981" : C.muted }}>
+                {b.paid && b.dueDate
+                  ? `✅ Pagada · Próximo pago: ${nextPayDate(b.dueDate)}`
+                  : b.dueDate ? `📅 ${b.dueDate}${over ? " 🚨 Vencida" : soon ? " ⚠️ Próxima" : ""}` : "Sin fecha"} · {b.freq}
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
