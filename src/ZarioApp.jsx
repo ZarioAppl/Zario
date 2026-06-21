@@ -111,6 +111,7 @@ const getCSS = (dark) => `
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:${dark ? "#0F172A" : "#F1F5F9"};}
 input,select{font-size:16px!important;-webkit-text-size-adjust:100%;-webkit-appearance:none;}
+input[type="number"]{color:inherit;-webkit-text-fill-color:inherit;}
 input::placeholder{color:#94A3B8;}
 select{-webkit-appearance:none;}
 
@@ -170,7 +171,7 @@ select{-webkit-appearance:none;}
 .bill-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:12px;margin-bottom:9px;border:1.5px solid ${dark ? "rgba(255,255,255,0.06)" : "#E2E8F0"};background:${dark ? "rgba(255,255,255,0.02)" : "#FFFFFF"};}
 .bill-row.overdue{border-color:rgba(244,63,94,0.45);background:rgba(244,63,94,0.03);}
 .bill-row.soon{border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.02);}
-.bill-row.paid{opacity:0.4;}
+.bill-row.paid{border-color:rgba(16,185,129,0.3)!important;background:rgba(16,185,129,0.03)!important;}
 
 .toggle{width:44px;height:24px;border-radius:99px;position:relative;cursor:pointer;border:none;transition:background 0.2s;flex-shrink:0;}
 .toggle-thumb{width:18px;height:18px;border-radius:50%;background:white;position:absolute;top:3px;left:3px;transition:transform 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);}
@@ -187,6 +188,8 @@ select{-webkit-appearance:none;}
 .analytics-wrap{width:100%;overflow:hidden;max-width:100%;}
 .chart-wrap{width:100%;overflow:hidden;max-width:100%;}
 
+input[style*="rgba(255,255,255"]{color:white!important;-webkit-text-fill-color:white!important;}
+input[style*="rgba(255,255,255"]::placeholder{color:rgba(255,255,255,0.4)!important;}
 @media(max-width:1100px){.stats-grid{grid-template-columns:1fr 1fr;}.two-col{grid-template-columns:1fr;}}
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%);}
@@ -349,7 +352,7 @@ const GoalRef = ({ dg, wg, mg, onDG, onWG, onMG }) => {
   useEffect(() => { if (dgR.current && dgR.current !== document.activeElement) dgR.current.value = dg || ""; }, [dg]);
   useEffect(() => { if (wgR.current && wgR.current !== document.activeElement) wgR.current.value = wg || ""; }, [wg]);
   useEffect(() => { if (mgR.current && mgR.current !== document.activeElement) mgR.current.value = mg || ""; }, [mg]);
-  const s = { width: "100%", background: "rgba(0,0,0,0.04)", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "10px 12px", color: "#0F172A", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" };
+  const s = { width: "100%", background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.25)", borderRadius: 10, padding: "10px 12px", color: "white", WebkitTextFillColor: "white", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" };
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, width: "100%", maxWidth: "100%" }}>
       <div>
@@ -379,7 +382,7 @@ const DailyRow = ({ onAdd }) => {
     if (amtR.current) amtR.current.value = "";
     descR.current?.focus();
   };
-  const s = { background: "rgba(255,255,255,0.08)", border: "1.5px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "11px 14px", color: "#F8FAFC", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none" };
+  const s = { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.2)", borderRadius: 10, padding: "11px 14px", color: "white", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", WebkitTextFillColor: "white" };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
       <input ref={descR} style={{ ...s, width: "100%", boxSizing: "border-box" }} type="text" placeholder="Descripción (ej. Servicio cliente)" autoComplete="off" />
@@ -1382,7 +1385,7 @@ export default function ZarioApp({ supabase, initialSession }) {
               {catEmoji[billName(b.name)] || "📄"}
             </div>
             <div style={{ flex: 1, marginLeft: 10, overflow: "hidden" }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: b.paid ? C.muted : C.text }}>{billName(b.name)}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{billName(b.name)}</div>
               <div style={{ fontSize: 11, marginTop: 2, color: over ? "#F43F5E" : soon ? "#D97706" : b.paid ? "#10B981" : C.muted }}>
                 {b.paid && b.dueDate
                   ? `✅ Pagada · Próximo pago: ${nextPayDate(b.dueDate)}`
