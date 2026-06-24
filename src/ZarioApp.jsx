@@ -347,7 +347,7 @@ const IncomeRef = ({ value, onSave, placeholder }) => {
 };
 
 // Input para metas diaria/semanal/mensual
-const GoalRef = ({ dg, wg, mg, onDG, onWG, onMG }) => {
+const GoalRef = ({ dg, wg, mg, onDG, onWG, onMG, dark }) => {
   const dgR = useRef(null); const wgR = useRef(null); const mgR = useRef(null);
   useEffect(() => { if (dgR.current && dgR.current !== document.activeElement) dgR.current.value = dg || ""; }, [dg]);
   useEffect(() => { if (wgR.current && wgR.current !== document.activeElement) wgR.current.value = wg || ""; }, [wg]);
@@ -2033,7 +2033,7 @@ const IncomeRef = ({ value, onSave, placeholder }) => {
 };
 
 // Input para metas diaria/semanal/mensual
-const GoalRef = ({ dg, wg, mg, onDG, onWG, onMG }) => {
+const GoalRef = ({ dg, wg, mg, onDG, onWG, onMG, dark }) => {
   const dgR = useRef(null); const wgR = useRef(null); const mgR = useRef(null);
   useEffect(() => { if (dgR.current && dgR.current !== document.activeElement) dgR.current.value = dg || ""; }, [dg]);
   useEffect(() => { if (wgR.current && wgR.current !== document.activeElement) wgR.current.value = wg || ""; }, [wg]);
