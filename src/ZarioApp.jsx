@@ -540,6 +540,7 @@ export default function ZarioApp({ supabase, initialSession }) {
   const [weeklyGoal, setWG] = useState(0);
   const [monthlyGoal, setMG] = useState(0);
   const [expFilter, setEF] = useState(0);
+  const [incFilter, setIF] = useState(0);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
   const [confirm, setConfirm] = useState(null);
@@ -634,6 +635,8 @@ export default function ZarioApp({ supabase, initialSession }) {
   const netWorth = totA - totL;
   const filteredExp = expFilter === 0 ? expenses : expFilter === 1 ? expenses.filter(e => isSameDay(e.date)) : expFilter === 2 ? expenses.filter(e => isThisWeek(e.date)) : expenses.filter(e => isThisMonth(e.date));
   const filteredTotal = filteredExp.reduce((s, x) => s + Number(x.amount), 0);
+  const filteredInc = incFilter === 0 ? incomes : incFilter === 1 ? incomes.filter(i => isSameDay(i.date)) : incFilter === 2 ? incomes.filter(i => isThisWeek(i.date)) : incomes.filter(i => isThisMonth(i.date));
+  const filteredIncTotal = filteredInc.reduce((s, x) => s + Number(x.amount), 0);
   const overdueBills = bills.filter(b => !b.paid && isOverdue(b.dueDate));
   const dueSoonBills = bills.filter(b => !b.paid && isDueSoon(b.dueDate) && !isOverdue(b.dueDate));
   const activeGoal = goals.find(g => !g.done && g.target > 0);
@@ -1278,26 +1281,62 @@ export default function ZarioApp({ supabase, initialSession }) {
 
   const Income = () => (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-        <div style={{ fontSize: 14, color: C.muted }}>Total: <strong style={{ color: "#10B981", fontFamily: "'Space Grotesk',sans-serif" }}>{fmt(totalInc)}</strong></div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ fontSize: 14, color: C.muted }}>Total: <strong style={{ color: "#10B981", fontFamily: "'Space Grotesk',sans-serif" }}>{fmt(filteredIncTotal)}</strong></div>
         <Btn onClick={() => openModal("addInc")}>+ Agregar Ingreso</Btn>
       </div>
-      {incomes.length === 0 ? (
-        <Card><div style={{ textAlign: "center", padding: "36px 0", color: C.muted }}><div style={{ fontSize: 32, marginBottom: 10 }}>💰</div><div>Sin ingresos registrados</div></div></Card>
-      ) : incomes.map(x => (
-        <div key={x.id} className="row-item">
-          <div className="ico-box" style={{ background: "rgba(16,185,129,0.08)" }}>{catEmoji[srcName(x.source)] || "💰"}</div>
-          <div style={{ flex: 1, marginLeft: 10, overflow: "hidden" }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.desc || srcName(x.source)}</div>
-            <div style={{ fontSize: 11, color: C.muted }}>{srcName(x.source)} · {x.date}</div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "#10B981" }}>{fmt(x.amount)}</span>
-            <button className="act-btn" onClick={() => openModal("editInc", x)}><IC n="edit" s={14} c={C.muted} /></button>
-            <button className="act-btn del" onClick={() => askDel("¿Eliminar este ingreso?", async () => delItem("incomes", x.id, setInc))}><IC n="trash" s={14} c="#F43F5E" /></button>
-          </div>
-        </div>
-      ))}
+      <div className="filter-row">
+        {["Todos", "Hoy", "Esta Semana", "Este Mes"].map((f, i) => (
+          <button key={i} className="chip" onClick={() => setIF(i)}
+            style={{ background: incFilter === i ? "rgba(16,185,129,0.12)" : "transparent", borderColor: incFilter === i ? "#10B981" : C.border, color: incFilter === i ? "#10B981" : C.muted, fontWeight: incFilter === i ? 600 : 400 }}>{f}</button>
+        ))}
+      </div>
+      {filteredInc.length === 0 ? (
+        <Card><div style={{ textAlign: "center", padding: "36px 0", color: C.muted }}><div style={{ fontSize: 32, marginBottom: 10 }}>💰</div><div>Sin ingresos en este período</div></div></Card>
+      ) : (() => {
+        const groups = {};
+        filteredInc.forEach(x => {
+          const d = x.date || todayISO();
+          if (!groups[d]) groups[d] = [];
+          groups[d].push(x);
+        });
+        const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+        const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+        const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+        const fmtDate = (d) => {
+          const dt = new Date(d + "T12:00:00");
+          const today = todayISO(); const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+          if (d === today) return "Hoy";
+          if (d === yesterday) return "Ayer";
+          return `${dias[dt.getDay()]} ${dt.getDate()} ${meses[dt.getMonth()]}`;
+        };
+        return sortedDates.map(date => {
+          const items = groups[date];
+          const dayTotal = items.reduce((s, x) => s + Number(x.amount), 0);
+          return (
+            <div key={date} style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, paddingBottom: 6, borderBottom: `1px solid ${C.border}` }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.5px" }}>📅 {fmtDate(date)}</span>
+                <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#10B981" }}>+{fmt(dayTotal)}</span>
+              </div>
+              {items.map(x => (
+                <div key={x.id} className="row-item" style={{ marginBottom: 6 }}>
+                  <div className="ico-box" style={{ background: "rgba(16,185,129,0.08)" }}>{catEmoji[srcName(x.source)] || "💰"}</div>
+                  <div style={{ flex: 1, marginLeft: 10, overflow: "hidden" }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.desc || srcName(x.source)}</div>
+                    <div style={{ fontSize: 11, color: C.muted }}>{srcName(x.source)} · {x.date}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "#10B981" }}>+{fmt(x.amount)}</span>
+                    <button className="act-btn" onClick={() => openModal("editInc", x)}><IC n="edit" s={14} c={C.muted} /></button>
+                    <button className="act-btn del" onClick={() => askDel("¿Eliminar este ingreso?", async () => delItem("incomes", x.id, setInc))}><IC n="trash" s={14} c="#F43F5E" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        });
+      })()}
     </div>
   );
 
