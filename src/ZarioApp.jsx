@@ -334,7 +334,7 @@ const IncomeRef = ({ value, onSave, placeholder }) => {
       <input
         ref={ref}
         className="inp"
-        style={{ flex: 1, color: "#0F172A", background: "rgba(0,0,0,0.04)" }}
+        style={{ flex: 1 }}
         type="number"
         inputMode="decimal"
         placeholder={placeholder || "RD$0.00"}
@@ -352,7 +352,9 @@ const GoalRef = ({ dg, wg, mg, onDG, onWG, onMG }) => {
   useEffect(() => { if (dgR.current && dgR.current !== document.activeElement) dgR.current.value = dg || ""; }, [dg]);
   useEffect(() => { if (wgR.current && wgR.current !== document.activeElement) wgR.current.value = wg || ""; }, [wg]);
   useEffect(() => { if (mgR.current && mgR.current !== document.activeElement) mgR.current.value = mg || ""; }, [mg]);
-  const s = { width: "100%", background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.25)", borderRadius: 10, padding: "10px 12px", color: "white", WebkitTextFillColor: "white", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" };
+  const s = dark
+    ? { width: "100%", background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.25)", borderRadius: 10, padding: "10px 12px", color: "#FFFFFF", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" }
+    : { width: "100%", background: "#F1F5F9", border: "1.5px solid #CBD5E1", borderRadius: 10, padding: "10px 12px", color: "#0F172A", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" };
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, width: "100%", maxWidth: "100%" }}>
       <div>
@@ -382,7 +384,7 @@ const DailyRow = ({ onAdd }) => {
     if (amtR.current) amtR.current.value = "";
     descR.current?.focus();
   };
-  const s = { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.2)", borderRadius: 10, padding: "11px 14px", color: "white", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", WebkitTextFillColor: "white" };
+  const s = { background: "#F1F5F9", border: "1.5px solid #CBD5E1", borderRadius: 10, padding: "11px 14px", color: "#0F172A", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none" };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
       <input ref={descR} style={{ ...s, width: "100%", boxSizing: "border-box" }} type="text" placeholder="Descripción (ej. Servicio cliente)" autoComplete="off" />
@@ -2018,7 +2020,7 @@ const IncomeRef = ({ value, onSave, placeholder }) => {
       <input
         ref={ref}
         className="inp"
-        style={{ flex: 1, color: "#0F172A", background: "rgba(0,0,0,0.04)" }}
+        style={{ flex: 1 }}
         type="number"
         inputMode="decimal"
         placeholder={placeholder || "RD$0.00"}
@@ -2036,7 +2038,9 @@ const GoalRef = ({ dg, wg, mg, onDG, onWG, onMG }) => {
   useEffect(() => { if (dgR.current && dgR.current !== document.activeElement) dgR.current.value = dg || ""; }, [dg]);
   useEffect(() => { if (wgR.current && wgR.current !== document.activeElement) wgR.current.value = wg || ""; }, [wg]);
   useEffect(() => { if (mgR.current && mgR.current !== document.activeElement) mgR.current.value = mg || ""; }, [mg]);
-  const s = { width: "100%", background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.25)", borderRadius: 10, padding: "10px 12px", color: "white", WebkitTextFillColor: "white", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" };
+  const s = dark
+    ? { width: "100%", background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.25)", borderRadius: 10, padding: "10px 12px", color: "#FFFFFF", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" }
+    : { width: "100%", background: "#F1F5F9", border: "1.5px solid #CBD5E1", borderRadius: 10, padding: "10px 12px", color: "#0F172A", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", boxSizing: "border-box" };
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, width: "100%", maxWidth: "100%" }}>
       <div>
@@ -2066,7 +2070,7 @@ const DailyRow = ({ onAdd }) => {
     if (amtR.current) amtR.current.value = "";
     descR.current?.focus();
   };
-  const s = { background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.2)", borderRadius: 10, padding: "11px 14px", color: "white", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none", WebkitTextFillColor: "white" };
+  const s = { background: "#F1F5F9", border: "1.5px solid #CBD5E1", borderRadius: 10, padding: "11px 14px", color: "#0F172A", fontSize: "16px", fontFamily: "'Inter',sans-serif", outline: "none" };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
       <input ref={descR} style={{ ...s, width: "100%", boxSizing: "border-box" }} type="text" placeholder="Descripción (ej. Servicio cliente)" autoComplete="off" />
