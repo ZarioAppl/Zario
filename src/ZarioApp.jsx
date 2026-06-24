@@ -635,7 +635,12 @@ export default function ZarioApp({ supabase, initialSession }) {
   const netWorth = totA - totL;
   const filteredExp = expFilter === 0 ? expenses : expFilter === 1 ? expenses.filter(e => isSameDay(e.date)) : expFilter === 2 ? expenses.filter(e => isThisWeek(e.date)) : expenses.filter(e => isThisMonth(e.date));
   const filteredTotal = filteredExp.reduce((s, x) => s + Number(x.amount), 0);
-  const filteredInc = incFilter === 0 ? incomes : incFilter === 1 ? incomes.filter(i => isSameDay(i.date)) : incFilter === 2 ? incomes.filter(i => isThisWeek(i.date)) : incomes.filter(i => isThisMonth(i.date));
+  // Combinar incomes (modal) + dailyEntries para la página de Ingresos
+  const allIncomeRecords = [
+    ...incomes.map(i => ({ id: i.id, desc: i.desc || "", amount: i.amount, date: i.date, source: i.source, type: "income" })),
+    ...dailyEntries.map(e => ({ id: e.id, desc: e.desc || "Registro", amount: e.amount, date: e.date || todayISO(), source: "Diario", time: e.time, type: "daily" })),
+  ].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const filteredInc = incFilter === 0 ? allIncomeRecords : incFilter === 1 ? allIncomeRecords.filter(i => isSameDay(i.date)) : incFilter === 2 ? allIncomeRecords.filter(i => isThisWeek(i.date)) : allIncomeRecords.filter(i => isThisMonth(i.date));
   const filteredIncTotal = filteredInc.reduce((s, x) => s + Number(x.amount), 0);
   const overdueBills = bills.filter(b => !b.paid && isOverdue(b.dueDate));
   const dueSoonBills = bills.filter(b => !b.paid && isDueSoon(b.dueDate) && !isOverdue(b.dueDate));
@@ -1321,15 +1326,15 @@ export default function ZarioApp({ supabase, initialSession }) {
               </div>
               {items.map(x => (
                 <div key={x.id} className="row-item" style={{ marginBottom: 6 }}>
-                  <div className="ico-box" style={{ background: "rgba(16,185,129,0.08)" }}>{catEmoji[srcName(x.source)] || "💰"}</div>
+                  <div className="ico-box" style={{ background: "rgba(16,185,129,0.08)" }}>{x.type === "daily" ? "💵" : catEmoji[srcName(x.source)] || "💰"}</div>
                   <div style={{ flex: 1, marginLeft: 10, overflow: "hidden" }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.desc || srcName(x.source)}</div>
-                    <div style={{ fontSize: 11, color: C.muted }}>{srcName(x.source)} · {x.date}</div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.desc}</div>
+                    <div style={{ fontSize: 11, color: C.muted }}>{x.type === "daily" ? `🕐 ${x.time || ""}` : srcName(x.source)} · {x.date}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                     <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "#10B981" }}>+{fmt(x.amount)}</span>
-                    <button className="act-btn" onClick={() => openModal("editInc", x)}><IC n="edit" s={14} c={C.muted} /></button>
-                    <button className="act-btn del" onClick={() => askDel("¿Eliminar este ingreso?", async () => delItem("incomes", x.id, setInc))}><IC n="trash" s={14} c="#F43F5E" /></button>
+                    {x.type === "income" && <button className="act-btn" onClick={() => openModal("editInc", x)}><IC n="edit" s={14} c={C.muted} /></button>}
+                    <button className="act-btn del" onClick={() => askDel("¿Eliminar este ingreso?", async () => x.type === "daily" ? delDaily(x.id) : delItem("incomes", x.id, setInc))}><IC n="trash" s={14} c="#F43F5E" /></button>
                   </div>
                 </div>
               ))}
