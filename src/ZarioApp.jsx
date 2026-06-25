@@ -4,7 +4,13 @@ import { useState, useRef, useEffect, useCallback } from "react";
 // UTILIDADES
 // ─────────────────────────────────────────────────────────────────────────────
 const fmt = (v) => "RD$" + (Number(v) || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const todayISO = () => new Date().toISOString().split("T")[0];
+const todayISO = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 const COLORS = ["#06B6D4", "#8B5CF6", "#10B981", "#F59E0B", "#F43F5E", "#EC4899", "#14B8A6", "#6366F1"];
 
 const fechaHoy = () => {
@@ -56,7 +62,10 @@ const nextPayDate = (d) => {
   if (!d) return null;
   const date = new Date(d + "T12:00:00");
   date.setMonth(date.getMonth() + 1);
-  return date.toISOString().split("T")[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 };
 
 const shouldReset = (b) => {
@@ -209,6 +218,7 @@ const IC = ({ n, s = 18, c = "currentColor" }) => {
     bar: "M18 20V10M12 20V4M6 20v-6",
     dollar: "M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6",
     trend: "M23 6L13.5 15.5 8.5 10.5 1 18M17 6h6v6",
+    coins: "M12 2a10 10 0 100 20A10 10 0 0012 2zM12 6v6l4 2",
     target: "M12 22a10 10 0 100-20 10 10 0 000 20zM12 18a6 6 0 100-12 6 6 0 000 12zM14 12a2 2 0 11-4 0 2 2 0 014 0z",
     wallet: "M21 4H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V6a2 2 0 00-2-2zM1 10h22",
     file: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6",
@@ -564,7 +574,7 @@ export default function ZarioApp({ supabase, initialSession }) {
         supabase.from("profiles").select("*").eq("id", uid).single(),
         supabase.from("expenses").select("*").eq("user_id", uid).order("expense_date", { ascending: false }),
         supabase.from("incomes").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
-        supabase.from("daily_entries").select("*").eq("user_id", uid).gte("entry_date", new Date(Date.now() - 30*24*60*60*1000).toISOString().split("T")[0]).order("entry_date", { ascending: false }).order("created_at", { ascending: false }),
+        supabase.from("daily_entries").select("*").eq("user_id", uid).gte("entry_date", (() => { const d = new Date(); d.setDate(d.getDate() - 30); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()).order("entry_date", { ascending: false }).order("created_at", { ascending: false }),
         supabase.from("goals").select("*").eq("user_id", uid).order("created_at", { ascending: true }),
         supabase.from("bills").select("*").eq("user_id", uid).order("created_at", { ascending: true }),
         supabase.from("budget").select("*").eq("user_id", uid),
@@ -1012,6 +1022,7 @@ export default function ZarioApp({ supabase, initialSession }) {
     { k: "expenses", label: "Gastos", icon: "dollar" },
     { k: "income", label: "Ingresos", icon: "trend" },
     { k: "daily", label: "Ingresos Diarios", icon: "daily" },
+    { k: "ganancia", label: "Ganancia", icon: "coins" },
     { k: "goals", label: "Metas", icon: "target" },
     { k: "budget", label: "Presupuesto", icon: "wallet" },
     { k: "networth", label: "Patrimonio", icon: "bar" },
@@ -1566,11 +1577,129 @@ export default function ZarioApp({ supabase, initialSession }) {
     </div>
   );
 
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PÁGINA GANANCIA
+  // ─────────────────────────────────────────────────────────────────────────
+  const Ganancia = () => {
+    const [filtro, setFiltro] = useState(0); // 0=Todos 1=Hoy 2=Semana 3=Mes
+
+    // Todos los ingresos combinados (igual que Income)
+    const todosIngresos = allIncomeRecords;
+    const todosGastos = expenses;
+
+    const filterFn = (arr, dateKey) => {
+      if (filtro === 0) return arr;
+      if (filtro === 1) return arr.filter(x => isSameDay(x[dateKey]));
+      if (filtro === 2) return arr.filter(x => isThisWeek(x[dateKey]));
+      return arr.filter(x => isThisMonth(x[dateKey]));
+    };
+
+    const ingsFiltrados = filterFn(todosIngresos, "date");
+    const gastsFiltrados = filterFn(todosGastos, "date");
+
+    const totalIngs = ingsFiltrados.reduce((s, x) => s + Number(x.amount), 0);
+    const totalGasts = gastsFiltrados.reduce((s, x) => s + Number(x.amount), 0);
+    const gananciaTotal = totalIngs - totalGasts;
+
+    // Agrupar por fecha uniendo ambas fuentes
+    const allDates = [...new Set([
+      ...ingsFiltrados.map(x => x.date),
+      ...gastsFiltrados.map(x => x.date),
+    ])].sort((a, b) => b.localeCompare(a));
+
+    const dias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+    const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+    const fmtDate = (d) => {
+      const dt = new Date(d + "T12:00:00");
+      const today = todayISO();
+      const yesterday = (() => { const y = new Date(); y.setDate(y.getDate()-1); return `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,"0")}-${String(y.getDate()).padStart(2,"0")}`; })();
+      if (d === today) return "Hoy";
+      if (d === yesterday) return "Ayer";
+      return `${dias[dt.getDay()]} ${dt.getDate()} ${meses[dt.getMonth()]}`;
+    };
+
+    return (
+      <div>
+        {/* Resumen superior */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+          <div style={{ padding: "12px 14px", background: "rgba(16,185,129,0.08)", borderRadius: 14, border: "1px solid rgba(16,185,129,0.2)", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#10B981", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 5 }}>Ingresos</div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800, color: "#10B981" }}>+{fmt(totalIngs)}</div>
+          </div>
+          <div style={{ padding: "12px 14px", background: "rgba(244,63,94,0.08)", borderRadius: 14, border: "1px solid rgba(244,63,94,0.2)", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#F43F5E", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 5 }}>Gastos</div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800, color: "#F43F5E" }}>-{fmt(totalGasts)}</div>
+          </div>
+          <div style={{ padding: "12px 14px", background: gananciaTotal >= 0 ? "rgba(6,182,212,0.08)" : "rgba(244,63,94,0.08)", borderRadius: 14, border: `1px solid ${gananciaTotal >= 0 ? "rgba(6,182,212,0.2)" : "rgba(244,63,94,0.2)"}`, textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: gananciaTotal >= 0 ? "#06B6D4" : "#F43F5E", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 5 }}>Ganancia</div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800, color: gananciaTotal >= 0 ? "#06B6D4" : "#F43F5E" }}>{fmt(gananciaTotal)}</div>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="filter-row">
+          {["Todos", "Hoy", "Esta Semana", "Este Mes"].map((f, i) => (
+            <button key={i} className="chip" onClick={() => setFiltro(i)}
+              style={{ background: filtro === i ? "rgba(6,182,212,0.1)" : "transparent", borderColor: filtro === i ? "#06B6D4" : C.border, color: filtro === i ? "#06B6D4" : C.muted, fontWeight: filtro === i ? 600 : 400 }}>{f}</button>
+          ))}
+        </div>
+
+        {/* Desglose por día */}
+        {allDates.length === 0 ? (
+          <Card><div style={{ textAlign: "center", padding: "36px 0", color: C.muted }}><div style={{ fontSize: 32, marginBottom: 10 }}>📊</div><div>Sin datos en este período</div></div></Card>
+        ) : allDates.map(date => {
+          const ingsDelDia = ingsFiltrados.filter(x => x.date === date);
+          const gastsDelDia = gastsFiltrados.filter(x => x.date === date);
+          const totalIngsDia = ingsDelDia.reduce((s, x) => s + Number(x.amount), 0);
+          const totalGastsDia = gastsDelDia.reduce((s, x) => s + Number(x.amount), 0);
+          const gananciaDia = totalIngsDia - totalGastsDia;
+          return (
+            <div key={date} style={{ marginBottom: 16 }}>
+              {/* Cabecera del día */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, paddingBottom: 8, borderBottom: `2px solid ${C.border}` }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.5px" }}>📅 {fmtDate(date)}</span>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: "#10B981", fontWeight: 600 }}>+{fmt(totalIngsDia)}</span>
+                  <span style={{ fontSize: 11, color: "#F43F5E", fontWeight: 600 }}>-{fmt(totalGastsDia)}</span>
+                  <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 800, color: gananciaDia >= 0 ? "#06B6D4" : "#F43F5E" }}>= {fmt(gananciaDia)}</span>
+                </div>
+              </div>
+              {/* Ingresos del día */}
+              {ingsDelDia.map(x => (
+                <div key={"i"+x.id} className="row-item" style={{ marginBottom: 5, borderLeft: "3px solid #10B981" }}>
+                  <div className="ico-box" style={{ background: "rgba(16,185,129,0.08)" }}>{x.type === "daily" ? "💵" : "💰"}</div>
+                  <div style={{ flex: 1, marginLeft: 10, overflow: "hidden" }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.desc || srcName(x.source)}</div>
+                    <div style={{ fontSize: 11, color: "#10B981" }}>Ingreso</div>
+                  </div>
+                  <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "#10B981", flexShrink: 0 }}>+{fmt(x.amount)}</span>
+                </div>
+              ))}
+              {/* Gastos del día */}
+              {gastsDelDia.map(x => (
+                <div key={"g"+x.id} className="row-item" style={{ marginBottom: 5, borderLeft: "3px solid #F43F5E" }}>
+                  <div className="ico-box" style={{ background: "rgba(244,63,94,0.08)" }}>{catEmoji[x.category] || "💸"}</div>
+                  <div style={{ flex: 1, marginLeft: 10, overflow: "hidden" }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.desc || x.category}</div>
+                    <div style={{ fontSize: 11, color: "#F43F5E" }}>Gasto · {x.category}</div>
+                  </div>
+                  <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "#F43F5E", flexShrink: 0 }}>-{fmt(x.amount)}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const pages = {
     dashboard: <Dashboard />,
     daily: <Daily />,
     expenses: <Expenses />,
     income: <Income />,
+    ganancia: <Ganancia />,
     goals: <Goals />,
     budget: <Budget />,
     networth: <NetWorth />,
@@ -1579,7 +1708,7 @@ export default function ZarioApp({ supabase, initialSession }) {
     profile: <ProfilePage user={user} dark={dark} C={C} onSave={saveProfile} onAvatar={handleAv} onDark={async () => { const nd = !dark; setDark(nd); await saveProf({ dark_mode: nd }); }} />,
   };
 
-  const pageTitles = { dashboard: "Inicio", daily: "Ingresos Diarios", expenses: "Gastos", income: "Ingresos", goals: "Metas", budget: "Presupuesto", networth: "Patrimonio", bills: "Facturas", analytics: "Analíticas", profile: "Perfil" };
+  const pageTitles = { dashboard: "Inicio", daily: "Ingresos Diarios", expenses: "Gastos", income: "Ingresos", ganancia: "Ganancia", goals: "Metas", budget: "Presupuesto", networth: "Patrimonio", bills: "Facturas", analytics: "Analíticas", profile: "Perfil" };
 
   return (
     <div style={{ background: C.bg, color: C.text, minHeight: "100vh" }}>
